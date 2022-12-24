@@ -2,7 +2,9 @@ import discord
 from discord.ext import commands
 import youtube_dl
 
+
 class music_bot(commands.Cog):
+
   def __init__(self, client):
 
     self.client = client
@@ -12,7 +14,9 @@ class music_bot(commands.Cog):
 
     if ctx.author.voice is None:
 
-      await ctx.send(f"{ctx.author} are you dumb? You gotta be in a voice channel to use me.")
+      await ctx.send(
+        f"{ctx.author} are you dumb? You gotta be in a voice channel to use me."
+      )
 
     voice_channel = ctx.author.voice.channel
 
@@ -29,13 +33,16 @@ class music_bot(commands.Cog):
 
     await ctx.voice_client.disconnect()
 
-
   @commands.command()
   async def play(self, ctx, url):
 
     ctx.voice_client.stop()
-    FFMPEG_OPTIONS = {'before_options':'-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options':'-vn'}
-    YDL_OPTIONS = {'format':'bestaudio'}
+    FFMPEG_OPTIONS = {
+      'before_options':
+      '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+      'options': '-vn'
+    }
+    YDL_OPTIONS = {'format': 'bestaudio'}
 
     vc = ctx.voice_client
 
@@ -72,8 +79,7 @@ class music_bot(commands.Cog):
 
       await message.channel.send("bruh what the fuck yiou want")
 
+
 def setup(client):
 
   client.add_cog(music_bot(client))
-
-      

@@ -8,16 +8,9 @@ class random_generator():
     self.number_of_sides = number_of_sides
 
   def roll_dice(self):
-    
-    return int(random.randint(1, self.number_of_sides))
 
+    return int(random.randint(1, self.number_of_sides))
 
   def coinflip(self):
 
     return int(random.randint(0, 1))
-
-    
-
-  
-    
-    
