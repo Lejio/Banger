@@ -48,8 +48,8 @@ if __name__ == "__main__":
 
         print(user_name)
 
-        await message.channel.send("Hello" + user_name +
-                                   " you're a fucking dumbass.")
+        await message.channel.send("`Hello" + user_name +
+                                   " you're a fucking dumbass.`")
 
       else:
 
@@ -63,11 +63,11 @@ if __name__ == "__main__":
 
         rand = random_generator(int(message.content.split()[1]))
 
-        await message.channel.send(rand.roll_dice())
+        await message.channel.send("`The result is: " + rand.roll_dice() + "`")
 
       else:
 
-        await message.channel.send("You can't roll a word brother.")
+        await message.channel.send("`You can't roll a word brother.`")
 
     # elif message.content.startswith("!runroulette"):
     #   if roulette_game_active:
@@ -79,15 +79,15 @@ if __name__ == "__main__":
 
     #     await message.channel.send("A roulette game is already in play.")
 
-    elif message.content.startswith("!addplayer"):
+    elif message.content.startswith("!join"):
 
       if (roulette_game.addplayer(user)):
 
-        await message.channel.send(user + " joined the game")
+        await message.channel.send("`" + user + " joined the game.`")
 
       else:
 
-        await message.channel.send(user + " already joined.")
+        await message.channel.send("`" + user + " already joined.`")
 
     elif message.content.startswith("!bet"):
 
@@ -99,18 +99,18 @@ if __name__ == "__main__":
 
           roulette_game.betcash(user, int(user_input[0]), user_input[1])
 
-          await message.channel.send(user + " has placed " + user_input[0] +
-                                     " on " + user_input[1])
+          await message.channel.send("`" + user + " has placed " + user_input[0] +
+                                     " on " + user_input[1] + "`")
         else:
 
           await message.channel.send(
-            "Invalid format. Please input after '!bet' the amount you want to bet followed by BLACK, RED, or GREEN"
+            "```Invalid format. Please input after '!bet' the amount you want to bet followed by BLACK, RED, or GREEN```"
           )
 
       else:
 
         await message.channel.send(
-          "Invalid format. You are missing at least one parameter. Type '!help' for more information."
+          "```Invalid format. You are missing at least one parameter. Type '!help' for more information.```"
         )
 
     elif message.content.startswith("!startround"):
@@ -135,14 +135,14 @@ if __name__ == "__main__":
 
     elif message.content.startswith("!table"):
 
-      await message.channel.send(roulette_table(roulette_game.get_bettable()))
+      await message.channel.send("```" + roulette_table(roulette_game.get_bettable()) + "```")
 
     elif message.content.startswith("!stats"):
 
       info = roulette_game.get_info(user)
 
-      await message.channel.send(info[0] + "\nCash: " + str(info[1]) +
-                                 "\nDebt: " + str(info[2]))
+      await message.channel.send("```" + info[0] + "\nCash: " + str(info[1]) +
+                                 "\nDebt: " + str(info[2]) + "```")
 
     elif message.content.startswith("!"):
 
