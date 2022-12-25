@@ -2,7 +2,7 @@ import os
 import discord
 from dice_roll import random_generator
 from webserver import keep_alive
-from gambaling_game import create_roulette
+from gambaling_game import roulette
 from check_user_string import check_user_string
 from printing import roulette_table, roulette_results
 # from lyricsbot import getsong
@@ -12,14 +12,14 @@ if __name__ == "__main__":
   intents = discord.Intents.all()  # Grants the bot access to all intents.
   # intents.message_content = True
   client = discord.Client(intents=intents)
-  roulette_game = create_roulette()  # Pre-creates roulette game.
+  roulette_game = roulette()  # Pre-creates roulette game.
 
   roulette_active = False  # Boolean used to check if a roulette game is already active.
 
   @client.event
   async def on_ready():
     print("We have logged on as {0.user}".format(client))
-    roulette_game = create_roulette()  # Pre-creates roulette game.
+    roulette_game = roulette()  # Pre-creates roulette game.
     roulette_game.startgame(1000)
 
   @client.event
@@ -146,7 +146,9 @@ if __name__ == "__main__":
 
     elif message.content.startswith("!"):
 
-      await message.channel.send("`Are you trying to use me big bro `:wink:`\nYou have inserted an invalid command.`")
+      await message.channel.send(
+        "`Are you trying to use me big bro `:wink:`\nYou have inserted an invalid command.`"
+      )
 
     # elif message.content.startswith("!searchlyrics"):
 
