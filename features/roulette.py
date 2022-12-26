@@ -1,40 +1,46 @@
 import random
+from discord.ext import commands
 import time
 
 
-class roulette():
+class roulette(commands.Cog):
 
-  def __init__(self):
+  def __init__(self, bot):
 
-    self.players = {}
+    self.default_cash = 1000
+
+    self.bot = bot
     self.betting = {}
     self.num_players = 0
     self.color = ""
     self.roulette = {"GREEN": {}, "BLACK": {}, "RED": {}}
-    self.default_cash = 1000
     self.players_betting = 0
-
+    self.startgame(self.default_cash)
+    
   def startgame(
     self, default_cash
-  ):  # Depricated method, you can still use this to change the default cash of all new players.
+  ):  
 
     self.default_cash = default_cash
 
-  def addplayer(self, player):
+  @commands.command("join")
+  async def addplayer(self, ctx, player):
 
-    if player in self.players.keys(
-    ):  # Checks the player's username is a key inside of the dictionary.
+    if player in self.players.keys():  # Checks the player's username is a key inside of the dictionary.
 
-      return False
+      await ctx.send("You have already joined the game.")
 
-    self.players[player] = {
+    else:
+
+      self.players[player] = {
       "Money": self.default_cash,
       "Debt": 0
     }  # If player's name is not inside the dictionary, create a new key.
 
-    return True
+      await ctx.send(f"{player} has joined the game.")
 
-  def betcash(self, player, bet_money, color):
+  @commands.command()
+  async def betcash(self, ctx, player, bet_money, color):
 
     self.players[player]["Money"] -= bet_money
 
@@ -179,3 +185,8 @@ class roulette():
   def get_bettable(self):
 
     return self.roulette
+
+
+async def setup(bot):
+
+  bot.add_cog(roulette(bot))
