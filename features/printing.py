@@ -8,7 +8,7 @@ def roulette_table(dict):
 
     for player in dict[color]:
 
-      prn_str += player + " is betting " + str(dict[color][player]) + "\n"
+      prn_str += str(player) + " is betting " + str(dict[color][player]) + "\n"
 
     prn_str += "\n"
 
@@ -22,12 +22,12 @@ def roulette_results(winners, losers):
 
   for winner in winners:
 
-    winners_list += f"{winner}: {winners[winner]}"
+    winners_list += f"{str(winner)}: {winners[winner]}"
 
   winners_list += "\n"
 
   for loser in losers:
 
-    losers_list += f"{loser}: {losers[loser]}"
+    losers_list += f"{str(loser)}: {losers[loser]}"
 
   return [winners_list, losers_list]

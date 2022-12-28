@@ -1,169 +1,178 @@
-import os
+from discord.ext import commands
+from features.gbbs_database import database
+from features.webserver import keep_alive
+from datetime import datetime
+import pytz
 import discord
-from dice_roll import random_generator
-from webserver import keep_alive
-from gambaling_game import roulette
-from check_user_string import check_user_string
-from printing import roulette_table, roulette_results
-# from lyricsbot import getsong
+import os
 
-if __name__ == "__main__":
 
-  intents = discord.Intents.all()  # Grants the bot access to all intents.
-  # intents.message_content = True
-  client = discord.Client(intents=intents)
-  roulette_game = roulette()  # Pre-creates roulette game.
+client = commands.Bot(command_prefix="!", intents=discord.Intents.all())
+cogs: list = ["features.random", "features.roulette"]
 
-  roulette_active = False  # Boolean used to check if a roulette game is already active.
 
-  @client.event
-  async def on_ready():
-    print("We have logged on as {0.user}".format(client))
-    roulette_game = roulette()  # Pre-creates roulette game.
-    roulette_game.startgame(1000)
+@client.event
+async def on_ready():
+  """
+    Client event. Runs when the bot is ready and has successfully logged in.
+  """
 
-  @client.event
-  async def on_message(message):
+  print("Logged in successfully as: " + str(client.user))
 
-    user_input = message.content.split()
+  for cog in cogs:  # Loads each config into the client.
+    try:
 
-    user = str(message.author)
+      print(f"Loading cog {cog}")
+      await client.load_extension(cog)
+      print(f"Loaded cog {cog}")
 
-    if (len(user_input) > 0):
+    except Exception as e:  # Displays error if loading fails.
 
-      user_input.pop(0)
+      exc = "{}: {}".format(type(e).__name__, e)
+      print("Failed to load cog {}\n{}".format(cog, exc))
 
-    if message.author == client.user:
 
-      return
+@client.event
+async def on_member_join(member):
+  """
+    Under Construction. 
+    Adds new users to the database.
+  """
 
-    elif message.content.startswith("!hello"):
+  print("Bruh" + str(member))
+  
 
-      if (len(message.content.split()) > 1):
+def is_guild_owner():
+  """
+    Determines if the current ctx is the guild owner and/or bot owner.
+  """
 
-        user_name = ""
-        for i in user_input:
+  def predicate(ctx):
+    return ctx.guild is not None and ctx.guild.owner_id == ctx.author.id
 
-          user_name = user_name + ' ' + i
+  return commands.check(predicate)
 
-        print(user_name)
 
-        await message.channel.send("`Hello" + user_name +
-                                   " you're a fucking dumbass.`")
+@client.command("hello")
+async def hello(ctx):
+  """
+    Test command. Echos back "Hello!".
+  """
+  await ctx.send('Hello!')
 
-      else:
 
-        await message.channel.send("Whats up bastard")
+@hello.error
+async def not_owner_error(ctx, error):
+  """
+    Test error. Should not happen anymore (if nothing major happens).
+  """
+  print(error)
+  await ctx.send("Something is seriously wrong if this gets sent lol.")
 
-    elif message.content.startswith("!rolldice"):
 
-      roll_check = check_user_string(user_input, True)
+@client.command("currentguild")
+async def current_guild(ctx):
+  """
+    Outputs the current guild name and id if the user is in a guild.
+  """
 
-      if (roll_check):
+  if ctx.guild == None:
 
-        rand = random_generator(int(message.content.split()[1]))
+    await ctx.send("You are not in a server.")
 
-        await message.channel.send("`The result is: " + rand.roll_dice() + "`")
+  else:
 
-      else:
+    await ctx.send("The current server id is: " + str(ctx.guild.id))
 
-        await message.channel.send("`You can't roll a word brother.`")
 
-    # elif message.content.startswith("!runroulette"):
-    #   if roulette_game_active:
+@client.command("stats")
+async def check_stats(ctx):
+  """
+    Checks the ctx.author's current stats. Including username, bangers, rank and level.
+    All these information is retrieved via db connection.
+  """
 
-    #     await message.channel.send("Roulette game has started!")
-    #     roulette_game_active = False
+  db = database(ctx.guild.id, (client.get_guild(ctx.guild.id)).members)
 
-    #   else:
+  records = db.get_user(ctx.author)
+  db.close()
+  print(f"{ctx.author} retrieved data.")
 
-    #     await message.channel.send("A roulette game is already in play.")
+  await ctx.send(
+    f"User: {records[1]} ({records[0]})\nLevel: {records[2]}\nBangers: {records[3]}\nRank: {records[4]}"
+  )
 
-    elif message.content.startswith("!join"):
+@check_stats.error
+async def check_stats_error(ctx, error):
+  """
+    Prints and logs error if something happens.
+  """
 
-      if (roulette_game.addplayer(user)):
+  print(error)
+  await ctx.send(error)
 
-        await message.channel.send("`" + user + " joined the game.`")
 
-      else:
+@client.command("checkguilds")
+@commands.check_any(commands.is_owner(), is_guild_owner())
+async def check_guild(ctx):
+  """
+    Prints all the guilds the bot is currently apart of.
+  """
 
-        await message.channel.send("`" + user + " already joined.`")
+  guilds = ""
 
-    elif message.content.startswith("!bet"):
+  for guild in client.guilds:
 
-      if len(user_input) > 0:
+    guilds += f"{guild}: {guild.id}\n"
 
-        if user_input[0].isdigit() and (user_input[1] == "BLACK"
-                                        or user_input[1] == "RED"
-                                        or user_input[1] == "GREEN"):
+  await ctx.send(guilds)
 
-          roulette_game.betcash(user, int(user_input[0]), user_input[1])
 
-          await message.channel.send("`" + user + " has placed " + user_input[0] +
-                                     " on " + user_input[1] + "`")
-        else:
+@client.command("checkmembers")
+@commands.check_any(commands.is_owner(), is_guild_owner())
+async def check_members(ctx):
+  """
+    Prints all the members in the current discord server.
+  """
 
-          await message.channel.send(
-            "```Invalid format. Please input after '!bet' the amount you want to bet followed by BLACK, RED, or GREEN```"
-          )
+  members = ""
+  guild = client.get_guild(ctx.guild.id)
 
-      else:
+  for member in guild.members:
 
-        await message.channel.send(
-          "```Invalid format. You are missing at least one parameter. Type '!help' for more information.```"
-        )
+    members += str(member) + "\n"
 
-    elif message.content.startswith("!startround"):
+  await ctx.send(members)
 
-      result = roulette_game.start_round()
 
-      await message.channel.send(result[0] + " " + str(result[1]) + "!")
+@client.command("addmoney")
+@commands.check_any(commands.is_owner(), is_guild_owner())
+async def add_money(ctx, money, id):
+  """
+    Adds a specified amount of money into an account.
+  """
 
-      if (roulette_game.end_round(result[0])):
+  db = database(ctx.guild.id, (client.get_guild(ctx.guild.id)).members)
 
-        prestr_result = roulette_game.return_result()
+  db.change_bangers(int(money), id)
+  db.close()
+  await ctx.send(f"Added {money} to {id}")
 
-        results = roulette_results(prestr_result[0], prestr_result[1])
-        await message.channel.send(results[0] + results[1])
 
-        roulette_game.roulette = {"GREEN": {}, "BLACK": {}, "RED": {}}
+@add_money.error
+async def add_money_error(ctx, error):
+  """
+    Prints the error of add_money.
+  """
 
-      else:
+  await ctx.send(str(error))
+  print(str(error))
 
-        roulette_game.roulette = {"GREEN": {}, "BLACK": {}, "RED": {}}
-        await message.channel.send("No one won! Y'all suck!")
+keep_alive()  # Webserver. This is pinged every 45 minutes to keep the bot alive.
 
-    elif message.content.startswith("!table"):
-
-      await message.channel.send("```" + roulette_table(roulette_game.get_bettable()) + "```")
-
-    elif message.content.startswith("!stats"):
-
-      info = roulette_game.get_info(user)
-
-      await message.channel.send("```" + info[0] + "\nCash: " + str(info[1]) +
-                                 "\nDebt: " + str(info[2]) + "```")
-
-    elif message.content.startswith("!"):
-
-      await message.channel.send(
-        "`Are you trying to use me big bro `:wink:`\nYou have inserted an invalid command.`"
-      )
-
-    # elif message.content.startswith("!searchlyrics"):
-
-    #   song = ""
-
-    #   for i in range(len(user_input)):
-
-    #     song += user_input[i] + " "
-
-    #   lyrics = getsong(user_input)
-
-    #   await message.channel.send(lyrics)
-
-  keep_alive()
-
+"""
+  Runs the bot. Sometimes it gets a TooManyRequests error. In which it would promptly kill the program and restart. (This is the only current known fix).
+"""
 try:
 
   client.run(os.environ['TOKEN'])
