@@ -1,5 +1,7 @@
 import random
 from discord.ext import commands
+from features.gbbs_database import database
+from features.printing import *
 import time
 
 
@@ -7,67 +9,90 @@ class roulette(commands.Cog):
 
   def __init__(self, bot):
 
-    self.default_cash = 1000
-
+    # self.default_cash = 1000
     self.bot = bot
-    self.betting = {}
-    self.num_players = 0
+    # self.players = {}
     self.color = ""
-    self.roulette = {"GREEN": {}, "BLACK": {}, "RED": {}}
-    self.players_betting = 0
-    self.startgame(self.default_cash)
+    self.roulette = {
+      "GREEN": {},
+      "BLACK": {},
+      "RED": {}
+    }  # Make a function that gets the length of each three colors.
+    # self.startgame(self.default_cash)
+
+  # def startgame(
+  #   self, default_cash
+  # ):
+
+  #   self.default_cash = default_cash
+
+  # @commands.command("jointable")
+  # async def addplayer(self, ctx):
+
+  #   if ctx.author in self.players.keys():  # Checks the player's username is a key inside of the dictionary.
+
+  #     await ctx.send("You have already joined the game.")
+
+  #   else:
+
+  #     # If player's name is not inside the dictionary, create a new key.
+
+  #     await ctx.send(f"{player} has joined the game.")
+
+  @commands.command("bet")
+  async def betcash(self, ctx, bet_money, color):
+
+    # self.players[ctx.author]["Money"] -= int(bet_money)
+
+    db = database(ctx.guild.id)
+    db.change_bangers(-int(bet_money), ctx.author)
+    player = db.get_user(ctx.author)
+
+    print(player[3])
     
-  def startgame(
-    self, default_cash
-  ):  
+    if (int(player[3]) < 0):
 
-    self.default_cash = default_cash
+      db.change_bangers(int(bet_money), ctx.author)
 
-  @commands.command("join")
-  async def addplayer(self, ctx, player):
-
-    if player in self.players.keys():  # Checks the player's username is a key inside of the dictionary.
-
-      await ctx.send("You have already joined the game.")
+      await ctx.send("`You have insufficient funds.`")
 
     else:
 
-      self.players[player] = {
-      "Money": self.default_cash,
-      "Debt": 0
-    }  # If player's name is not inside the dictionary, create a new key.
+      if ctx.author in self.roulette[color].keys():
 
-      await ctx.send(f"{player} has joined the game.")
+        self.roulette[color][ctx.author] += int(bet_money)
 
-  @commands.command()
-  async def betcash(self, ctx, player, bet_money, color):
+        await ctx.send(f"`{ctx.author} has placed {bet_money} more on {color}`")
 
-    self.players[player]["Money"] -= bet_money
+      else:
 
-    print(self.players)
+        self.roulette[color][ctx.author] = int(bet_money)
 
-    if ((self.players[player]["Money"]) < 0):
+      await ctx.send(f"`{ctx.author} has placed {bet_money} on {color}`")
 
-      self.players[player]["Money"] += bet_money
+    db.close()
 
-      return False
+  @betcash.error
+  async def bet_cash_error(ctx, error):
 
-    if player in self.roulette[color].keys():
+    print(error)
+    await ctx.send("Invalid format.")
 
-      self.roulette[color][player] += bet_money
+  def num_players(self):
 
-    else:
+    num_players = 0
 
-      self.roulette[color][player] = bet_money
+    for col in self.roulette:
 
-    return True
+      num_players += len(self.roulette[col])
 
-  def getmoney(self, player, amount):  # Depricated method.
+    return num_players
 
-    self.players[player]["Money"] += amount
-    self.players[player]["Debt"] += amount
+  def num_winners(self):
 
-  def start_round(self):
+    return len(self.roulette[self.color])
+
+  def generate_result(self):
 
     number = random.randint(0, 37)
 
@@ -89,56 +114,76 @@ class roulette(commands.Cog):
 
       self.color = "RED"
 
+    print(f"The result is: {self.color}, {number}")
     return [self.color, number]
 
-  def end_round(
-    self, color
-  ):  # This method should be ran after the start_round() method. It completes the final back end processes, such as giving the players money, etc.
+  @commands.command("table")
+  async def print_table(self, ctx):
 
-    self.pot = 0
+    await ctx.send(roulette_table(self.roulette))
 
-    num_winners = len(self.roulette[self.color])
+  @commands.command("startround")
+  async def start_round(self, ctx):
 
-    if num_winners > 0:
+    result = self.generate_result()
+
+    prnt_result = roulette_results(self.return_winners(), self.return_losers())
+
+    await ctx.send(
+      f"```The result is a {result[0]} {result[1]}!\n{prnt_result[0]}{prnt_result[1]}```"
+    )
+
+    db = database(ctx.guild.id)
+
+    if self.num_players() == 0:
+
+      await ctx.send("`No one is betting right now.`")
+
+    elif self.num_players() == 1:
+
+      for player in self.roulette[result[0]]:
+
+        db.change_bangers(self.roulette[result[0]][player] * 1.5, player)
+
+    elif self.num_players() > 1:
+
+      pot = 0
 
       for col in self.roulette:
 
-        if (col != self.color):
+        for player in self.roulette[col]:
 
-          for player in self.roulette[col]:
+          if col != self.color:
 
-            self.pot += self.roulette[col][player]
+            pot += self.roulette[col][player]
 
-        else:
+      for col in self.roulette:
 
-          for player in self.roulette[col]:
+        for player in self.roulette[col]:
 
-            self.players[player]["Money"] += int(
-              self.roulette[col][player]
-            )  # Returns the money to the player (suppositely, something is wrong with this atm)
+          if col == self.color:
 
-      print(self.pot)
-      self.pot = int(self.pot / num_winners)
+            if len(self.roulette[col]) > 0:
 
-      if self.pot == 0:
+              db.change_bangers(
+                (pot // self.num_winners()) + self.roulette[col][player],
+                player)
 
-        for player in self.roulette[self.color]:
+            else:
 
-          self.players[player]["Money"] += int(
-            self.roulette[self.color][player] *
-            1.5)  # The player increases their money by 50% if playing alone.
+              await ctx.send("`No one won! Ya'll suck!`")
 
-          return True
+    db.add_query_roulette(self.color, int(result[1]))
 
-      else:
+    self.roulette = {"GREEN": {}, "BLACK": {}, "RED": {}}
 
-        for player in self.roulette[self.color]:
+  @start_round.error
+  async def start_round_error(ctx, error):
 
-          self.players[player]["Money"] += self.pot
+    print(error)
+    await ctx.send("`" + str(error) + "`")
 
-        return True
-
-    return False
+  
 
   def return_winners(self):
 
@@ -147,8 +192,6 @@ class roulette(commands.Cog):
     for player in self.roulette[self.color]:
 
       winners[player] = self.roulette[self.color][player]
-
-      self.players[player]["Money"] += self.roulette[self.color][player]
 
     return winners
 
@@ -176,17 +219,17 @@ class roulette(commands.Cog):
 
     return [self.return_winners(), self.return_losers()]
 
-  def get_info(self, player):
+  # def get_info(self, player):  # Depricated function. Ready for removal.
 
-    return [
-      player, self.players[player]["Money"], self.players[player]["Debt"]
-    ]
+  #   return [
+  #     player, self.players[player]["Money"], self.players[player]["Debt"]
+  #   ]
 
-  def get_bettable(self):
+  # def get_bettable(self):
 
-    return self.roulette
+  #   return self.roulette
 
 
 async def setup(bot):
 
-  bot.add_cog(roulette(bot))
+  await bot.add_cog(roulette(bot))

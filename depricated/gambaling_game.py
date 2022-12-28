@@ -11,26 +11,19 @@ class roulette():
     self.num_players = 0
     self.color = ""
     self.roulette = {"GREEN": {}, "BLACK": {}, "RED": {}}
-    self.default_cash = 1000
-    self.players_betting = 0
+    self.default_cash = 10000
 
-  def startgame(
-    self, default_cash
-  ):  # Depricated method, you can still use this to change the default cash of all new players.
+  def startgame(self, default_cash):  # Depricated method, you can still use this to change the default cash of all new players.
 
     self.default_cash = default_cash
 
   def addplayer(self, player):
 
-    if player in self.players.keys(
-    ):  # Checks the player's username is a key inside of the dictionary.
+    if player in self.players.keys():  # Checks the player's username is a key inside of the dictionary.
 
       return False
 
-    self.players[player] = {
-      "Money": self.default_cash,
-      "Debt": 0
-    }  # If player's name is not inside the dictionary, create a new key.
+    self.players[player] = {"Money": self.default_cash, "Debt": 0}  # If player's name is not inside the dictionary, create a new key.
 
     return True
 
@@ -40,7 +33,7 @@ class roulette():
 
     print(self.players)
 
-    if ((self.players[player]["Money"]) < 0):
+    if ((self.players[player]["Money"]) <= 0):
 
       self.players[player]["Money"] += bet_money
 
@@ -51,9 +44,9 @@ class roulette():
       self.roulette[color][player] += bet_money
 
     else:
-
+      
       self.roulette[color][player] = bet_money
-
+      
     return True
 
   def getmoney(self, player, amount):  # Depricated method.
@@ -65,9 +58,7 @@ class roulette():
 
     number = random.randint(0, 37)
 
-    if (
-      (number == 0) or (number == 37)
-    ):  # Number 37 is turned into 00, while both numbers will represent GREEN
+    if ((number == 0) or (number == 37)):  # Number 37 is turned into 00, while both numbers will represent GREEN
 
       if number == 37:
 
@@ -85,9 +76,7 @@ class roulette():
 
     return [self.color, number]
 
-  def end_round(
-    self, color
-  ):  # This method should be ran after the start_round() method. It completes the final back end processes, such as giving the players money, etc.
+  def end_round(self, color):  # This method should be ran after the start_round() method. It completes the final back end processes, such as giving the players money, etc.
 
     self.pot = 0
 
@@ -107,20 +96,16 @@ class roulette():
 
           for player in self.roulette[col]:
 
-            self.players[player]["Money"] += int(
-              self.roulette[col][player]
-            )  # Returns the money to the player (suppositely, something is wrong with this atm)
-
+            self.players[player]["Money"] += int(self.roulette[col][player])  # Returns the money to the player (suppositely, something is wrong with this atm)
+            
       print(self.pot)
       self.pot = int(self.pot / num_winners)
 
       if self.pot == 0:
-
+        
         for player in self.roulette[self.color]:
-
-          self.players[player]["Money"] += int(
-            self.roulette[self.color][player] *
-            1.5)  # The player increases their money by 50% if playing alone.
+  
+          self.players[player]["Money"] += int(self.roulette[self.color][player] * 1.5)  # The player increases their money by 50% if playing alone.
 
           return True
 
@@ -158,10 +143,10 @@ class roulette():
 
           if player in losers.keys():
 
-            losers[player] = +self.roulette[col][player]
+            losers[player] =+ self.roulette[col][player]
 
           else:
-
+            
             losers[player] = self.roulette[col][player]
 
     return losers
