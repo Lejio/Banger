@@ -9,35 +9,17 @@ class roulette(commands.Cog):
 
   def __init__(self, bot):
 
-    # self.default_cash = 1000
+    # Single player is still broken.
+    # It seems like if the one player puts bets on multiple colors, the lost money would still return to the user's pocket.
+
     self.bot = bot
-    # self.players = {}
     self.color = ""
     self.roulette = {
       "GREEN": {},
       "BLACK": {},
       "RED": {}
-    }  # Make a function that gets the length of each three colors.
-    # self.startgame(self.default_cash)
+    }  
 
-  # def startgame(
-  #   self, default_cash
-  # ):
-
-  #   self.default_cash = default_cash
-
-  # @commands.command("jointable")
-  # async def addplayer(self, ctx):
-
-  #   if ctx.author in self.players.keys():  # Checks the player's username is a key inside of the dictionary.
-
-  #     await ctx.send("You have already joined the game.")
-
-  #   else:
-
-  #     # If player's name is not inside the dictionary, create a new key.
-
-  #     await ctx.send(f"{player} has joined the game.")
 
   @commands.command("bet")
   async def betcash(self, ctx, bet_money, color):

@@ -99,7 +99,7 @@ async def check_stats(ctx):
   print(f"{ctx.author} retrieved data.")
 
   await ctx.send(
-    f"User: {records[1]} ({records[0]})\nLevel: {records[2]}\nBangers: {records[3]}\nRank: {records[4]}"
+    f"```User: {records[1]} ({records[0]})\nLevel: {records[2]}\nBangers: {records[3]}\nRank: {records[4]}```"
   )
 
 @check_stats.error
@@ -156,7 +156,7 @@ async def add_money(ctx, money, id):
 
   db.change_bangers(int(money), id)
   db.close()
-  await ctx.send(f"Added {money} to {id}")
+  await ctx.send(f"`Added {money} to {id}`")
 
 
 @add_money.error
