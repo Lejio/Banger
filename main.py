@@ -1,14 +1,17 @@
 from discord.ext import commands
+from discord import app_commands
+from under_construction.test_v2 import test
+import discord
 from features.gbbs_database import database
 from features.webserver import keep_alive
 from datetime import datetime
 import pytz
-import discord
 import os
 
 
 client = commands.Bot(command_prefix="!", intents=discord.Intents.all())
-cogs: list = ["features.random", "features.roulette"]
+# cogs: list = ["features.random", "features.roulette_v1"]
+cogs: list = ["under_construction.test_v2", "features.roulette_v2", "features.random_v2"]
 
 
 @client.event
@@ -17,20 +20,24 @@ async def on_ready():
     Client event. Runs when the bot is ready and has successfully logged in.
   """
 
-  print("Logged in successfully as: " + str(client.user))
+  print(f"\n{datetime.utcnow()}: Logged in successfully as: " + str(client.user) + "\n")
 
   for cog in cogs:  # Loads each config into the client.
-    try:
+    # try:
 
-      print(f"Loading cog {cog}")
-      await client.load_extension(cog)
-      print(f"Loaded cog {cog}")
+    await client.load_extension(cog)
+    print(f"Loaded cog {cog}")
 
-    except Exception as e:  # Displays error if loading fails.
+  print("Successfully loaded all Cogs\n")
 
-      exc = "{}: {}".format(type(e).__name__, e)
-      print("Failed to load cog {}\n{}".format(cog, exc))
+    # except Exception as e:  # Displays error if loading fails.
 
+    # exc = "{}: {}".format(type(e).__name__, e)
+    # print("Failed to load cog {}\n{}".format(cog, exc))
+      
+  synced = await client.tree.sync()
+  print(f"Synced {len(synced)} commands.")
+  
 
 @client.event
 async def on_member_join(member):
@@ -53,12 +60,14 @@ def is_guild_owner():
   return commands.check(predicate)
 
 
-@client.command("hello")
-async def hello(ctx):
+@client.tree.command(name="hello", description="A hello echoer.")
+async def hello(interaction: discord.Interaction, member: discord.Member):
   """
     Test command. Echos back "Hello!".
   """
-  await ctx.send('Hello!')
+  embed = discord.Embed(title="test", description=f"{str(member)} said hello!", color=discord.Colour.yellow(), timestamp=datetime.utcnow())
+  embed.add_field(name="bruh", value="yes")
+  await interaction.response.send_message(embed=embed)
 
 
 @hello.error
@@ -84,32 +93,44 @@ async def current_guild(ctx):
 
     await ctx.send("The current server id is: " + str(ctx.guild.id))
 
+def get_user_id(members):
+  member_ids = []
+  for member in members:
 
-@client.command("stats")
-async def check_stats(ctx):
+    member_ids.append(member.id)
+
+  return member_ids
+  
+@client.tree.command(name="stats", description="View the your own stats or other member's.")
+async def check_stats(interaction: discord.Interaction, member: discord.Member=None):
   """
     Checks the ctx.author's current stats. Including username, bangers, rank and level.
     All these information is retrieved via db connection.
   """
+  if member == None:
 
-  db = database(ctx.guild.id, (client.get_guild(ctx.guild.id)).members)
+    member = interaction.user
 
-  records = db.get_user(ctx.author)
+  db = database(interaction.guild_id, (get_user_id(client.get_guild((interaction.guild_id)).members)))
+  print(interaction.user.id)
+  records = db.get_user(member.id)
+  print(records)
   db.close()
-  print(f"{ctx.author} retrieved data.")
 
-  await ctx.send(
-    f"```User: {records[1]} ({records[0]})\nLevel: {records[2]}\nBangers: {records[3]}\nRank: {records[4]}```"
-  )
+  embed = discord.Embed(title=f"{member.display_name}", description="The current stats:", 
+                        color=discord.Colour.yellow(),
+                        timestamp=datetime.utcnow())
+  embed.set_thumbnail(url=member.avatar)
+  embed.add_field(name="User ID", value=f"{member.id}")
+  embed.add_field(name="Level", value=f"{records[1]}")
+  embed.add_field(name="$B", value=f"{records[2]}", inline=False)
+  # embed.add_field(name="Rank", value=)
+  embed.add_field(name="Highest Role", value=f"{member.top_role.mention}")
 
-@check_stats.error
-async def check_stats_error(ctx, error):
-  """
-    Prints and logs error if something happens.
-  """
+  print(f"{interaction.user} retrieved data.")
 
-  print(error)
-  await ctx.send(error)
+  await interaction.response.send_message(embed=embed)
+  embed.clear_fields()
 
 
 @client.command("checkguilds")
@@ -167,6 +188,7 @@ async def add_money_error(ctx, error):
 
   await ctx.send(str(error))
   print(str(error))
+
 
 keep_alive()  # Webserver. This is pinged every 45 minutes to keep the bot alive.
 

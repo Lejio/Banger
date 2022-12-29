@@ -35,7 +35,7 @@ class database:
 
     for member in self.MEMBERS:
 
-      self.add_user(str(member), member.display_name, 0, 1000, ":video_game:")
+      self.add_user(int(member), 0, 1000, ":video_game:")
 
 
   def database_setup(self):
@@ -45,14 +45,13 @@ class database:
 
     self.conn.execute('''CREATE TABLE USERS
          (ID INT PRIMARY KEY     NOT NULL,
-         NAME           TEXT    NOT NULL,
          LEVEL            INT     NOT NULL,
          BANGERS        INT,
          BADGE       TEXT
          );''')
 
     self.conn.execute('''CREATE TABLE ROULETTE
-         (RUN INT PRIMARY KEY AUTOINCREMENT,
+         (RUN INTEGER PRIMARY KEY AUTOINCREMENT,
          COLOR           TEXT    NOT NULL,
          NUMBER          INT NOT NULL
          );''')
@@ -77,18 +76,17 @@ class database:
     return False
 
   
-  def add_user(self, id, name, level, bangers, badge):
+  def add_user(self, id, level, bangers, badge):
     """
     Creates a new user with these parameters as entries.
     :param: id - The user's discord id.
-    :param: name - The user's discord server nickname
     :param: level - The user's default level
     :param: bangers - The user's default currency amount
     :param: bagde - The user's default badge
     """
 
     self.conn.execute(
-      f"INSERT INTO USERS (ID, NAME, LEVEL, BANGERS, BADGE) VALUES ('{id}', '{name}', '{level}', '{bangers}', '{badge}' )"
+      f"INSERT INTO USERS (ID, LEVEL, BANGERS, BADGE) VALUES ('{id}', '{level}', '{bangers}', '{badge}' )"
     )
 
     self.conn.commit()  # Commits the changes.
@@ -103,7 +101,7 @@ class database:
 
     records = self.get_user(id)
 
-    new_bangers = int(records[3]) + int(bangers)
+    new_bangers = int(records[2]) + int(bangers)
 
     self.conn.execute(
       f"UPDATE USERS set BANGERS = '{new_bangers}' where ID = '{id}'")
@@ -133,13 +131,7 @@ class database:
 
     return self.get_user(id)[3]
 
-  def get_user_badge(self, id):
 
-    return self.get_user(id)[4]
-
-  def get_user_level(self, id):
-
-    return self.get_user(id)[2]
 
   def get_roulette_records(self):
 

@@ -5,7 +5,7 @@ from features.printing import *
 import time
 
 
-class roulette(commands.Cog):
+class roulette_v1(commands.Cog):
 
   def __init__(self, bot):
 
@@ -214,4 +214,4 @@ class roulette(commands.Cog):
 
 async def setup(bot):
 
-  await bot.add_cog(roulette(bot))
+  await bot.add_cog(roulette_v1(bot))
