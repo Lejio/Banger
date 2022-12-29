@@ -30,7 +30,7 @@ class rand(commands.Cog):
     else:
 
       await ctx.send("The result is: TAILS")
-
+    
 
 async def setup(bot):
 
